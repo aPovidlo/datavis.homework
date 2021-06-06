@@ -129,7 +129,13 @@ loadData().then(data => {
                 return colorScale(d['region'])
             });
 
-
+        d3.selectAll('rect').on('click', function (active, i){
+            d3.selectAll('rect').style('opacity', 0.1);
+            d3.select(this).style('opacity', 1);
+            scatterPlot.selectAll('circle').style('opacity', 0);
+            scatterPlot.selectAll('circle').filter(d => d['region'] == active.region)
+                                           .style('opacity', 0.9)
+        })
 
         return;
     }
