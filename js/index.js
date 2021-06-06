@@ -71,14 +71,73 @@ loadData().then(data => {
         updateScattePlot();
     });
 
+    d3.select('#param').on('change', function(){
+        param = d3.select(this).property('value');
+        updateBar();
+    })
+
     function updateBar() {
+        let RegionKeys = d3.map(data, function (d) {
+            return d['region'];
+        }).keys();
+
+        let RegionMean = RegionKeys.map(
+            function (reg){
+                return (
+                    d3.mean(data.filter(function (d){return d['region'] == reg})
+                                .flatMap(function (d){return d[param][year]})
+                    )
+                )
+            }
+        );
+
+        let MeanForRegion = [];
+        RegionKeys.forEach((key, i) => {
+            let temp = {"region": key, "mean": RegionMean[i]};
+            MeanForRegion.push(temp);
+        });
+
+        // console.log(param)
+        // console.log(RegionKeys);
+        // console.log(RegionMean);
+        // console.log(MeanForRegion);
+        // console.log(d3.max(RegionMean))
+
+        xBar.domain(RegionKeys);
+        xBarAxis.call(d3.axisBottom(xBar));
+
+        yBar.domain([0, d3.max(RegionMean)]);;
+        yBarAxis.call(d3.axisLeft(yBar));
+
+        barChart.selectAll('rect').remove();
+
+        barChart.selectAll('rect')
+            .data(MeanForRegion)
+            .enter()
+            .append('rect')
+            .attr('width', xBar.bandwidth())
+            .attr('height', function (d) {
+                return height - yBar(d['mean']);
+            })
+            .attr('x', function (d){
+                return (xBar(d['region']));
+            })
+            .attr('y', function (d){
+                return yBar(d['mean']) - margin;
+            })
+            .attr('fill', function (d){
+                return colorScale(d['region'])
+            });
+
+
+
         return;
     }
 
     function updateScattePlot() {
         let xRange = data.map(function (d) {return +d[xParam][year]});
         let yRange = data.map(function (d) {return +d[yParam][year]});
-        let rRange = data.map(function (d) {return +d[rParam][year]})
+        let rRange = data.map(function (d) {return +d[rParam][year]});
 
         x.domain([d3.min(xRange), d3.max(xRange)]);
         y.domain([d3.min(yRange), d3.max(yRange)]);
