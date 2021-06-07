@@ -129,12 +129,19 @@ loadData().then(data => {
                 return colorScale(d['region'])
             });
 
-        d3.selectAll('rect').on('click', function (active, i){
-            d3.selectAll('rect').style('opacity', 0.1);
-            d3.select(this).style('opacity', 1);
-            scatterPlot.selectAll('circle').style('opacity', 0);
-            scatterPlot.selectAll('circle').filter(d => d['region'] == active.region)
-                                           .style('opacity', 0.9)
+        d3.selectAll('rect').on('click', function (active){
+            if (highlighted != this) {
+                barChart.selectAll('rect').style('opacity', 0.1);
+                d3.select(this).style('opacity', 1);
+                scatterPlot.selectAll('circle').style('opacity', 0);
+                scatterPlot.selectAll('circle').filter(d => d['region'] == active.region)
+                    .style('opacity', 0.9)
+                highlighted = this;
+            } else {
+                barChart.selectAll('rect').style('opacity', 1)
+                scatterPlot.selectAll('circle').style('opacity', 0.75)
+                highlighted = null;
+            }
         })
 
         return;
@@ -170,12 +177,64 @@ loadData().then(data => {
             .attr('fill', function (d) {
                 return colorScale(d['region'])
             })
+            .attr('opacity', 0.75)
+
+        scatterPlot.selectAll('circle').on('click', function (active){
+            scatterPlot.selectAll('circle').attr('stroke-width', 'default').style('opacity', 0.35)
+            d3.select(this).attr('stroke-width', 3).style('opacity', 1.0);
+            selected = active['country']
+            updateLinearPlot();
+        })
 
         return;
     }
 
+    function updateLinearPlot() {
+        if (selected != null) {
+            let ValueData = data.filter(function (d){return d['country'] == selected})
+                                  .map(function (d){return d[lineParam]})[0];
+
+            let CountryData = [];
+            for (let year = 1800; year < 2021; year++) {
+                CountryData.push({'year': year, 'value': +ValueData[year]})
+            }
+
+            // console.log(ValueData)
+            // console.log(CountryData)
+
+            CountryData.splice(211, 5);
+
+            let xRange = d3.range(1800, 2021);
+            let yRange = d3.values(ValueData).map(function (d){return +d});
+
+            x.domain([d3.min(xRange), d3.max(xRange)])
+            y.domain([d3.min(yRange), d3.max(yRange)])
+
+            xLineAxis.call(d3.axisBottom(x))
+            yLineAxis.call(d3.axisLeft(y))
+
+            lineChart.append('path')
+                     .attr('class', 'line')
+                     .datum(CountryData)
+                     .enter()
+                     .append('path');
+
+            lineChart.selectAll('.line')
+                .datum(CountryData)
+                .attr("stroke", "black")
+                .attr("stroke-width", 2)
+                .attr("fill", "none")
+                .attr("d", d3.line()
+                    .x(d => x(+d.year))
+                    .y(d => y(+d.value))
+                );
+
+        }
+    }
+
     updateBar();
     updateScattePlot();
+    updateLinearPlot();
 });
 
 
