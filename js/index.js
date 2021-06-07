@@ -76,6 +76,11 @@ loadData().then(data => {
         updateBar();
     })
 
+    d3.select('#p').on('change', function(){
+        lineParam = d3.select(this).property('value');
+        updateLinearPlot();
+    })
+
     function updateBar() {
         let RegionKeys = d3.map(data, function (d) {
             return d['region'];
@@ -191,6 +196,7 @@ loadData().then(data => {
 
     function updateLinearPlot() {
         if (selected != null) {
+            d3.select('.country-name').text(selected);
             let ValueData = data.filter(function (d){return d['country'] == selected})
                                   .map(function (d){return d[lineParam]})[0];
 
